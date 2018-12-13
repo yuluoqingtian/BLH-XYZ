@@ -42,7 +42,7 @@ public class Main_win2 {
     private ArrayList<ExcelItem> itemList;
     private int itemEditIndex = 0;
     private String editItemKey = null;
-    private String[] tableHeader = {"KEY", "X", "Y", "Z", "B", "L", "H", "选择"};
+    private String[] tableHeader = {"选择", "KEY", "X", "Y", "Z", "B", "L", "H"};
 
     public Main_win2() {
 
@@ -94,15 +94,15 @@ public class Main_win2 {
                 ArrayList<ExcelItem> choosedItemList = new ArrayList<ExcelItem>();
 
                 for (int i = 0; i < jTable.getRowCount(); i++) {
-                    if ((Boolean) jTable.getModel().getValueAt(i, 7)) {
+                    if ((Boolean) jTable.getModel().getValueAt(i, 0)) {
                         ExcelItem item = new ExcelItem(
-                                (String) jTable.getModel().getValueAt(i, 0),
                                 (String) jTable.getModel().getValueAt(i, 1),
                                 (String) jTable.getModel().getValueAt(i, 2),
                                 (String) jTable.getModel().getValueAt(i, 3),
                                 (String) jTable.getModel().getValueAt(i, 4),
                                 (String) jTable.getModel().getValueAt(i, 5),
-                                (String) jTable.getModel().getValueAt(i, 6)
+                                (String) jTable.getModel().getValueAt(i, 6),
+                                (String) jTable.getModel().getValueAt(i, 7)
                         );
 
                         choosedItemList.add(item);
@@ -247,8 +247,8 @@ public class Main_win2 {
 
             for (int i = 0; i < tableLength; i++) {
                 ExcelItem tableItem = itemList.get(i);
-                rowData[i] = new Object[]{tableItem.getKey(), tableItem.getX(), tableItem.getY(), tableItem.getZ()
-                        , tableItem.getB(), tableItem.getL(), tableItem.getH(), Boolean.FALSE};
+                rowData[i] = new Object[]{Boolean.FALSE, tableItem.getKey(), tableItem.getX(), tableItem.getY(), tableItem.getZ()
+                        , tableItem.getB(), tableItem.getL(), tableItem.getH()};
             }
 
 

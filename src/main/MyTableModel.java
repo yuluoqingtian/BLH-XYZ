@@ -62,7 +62,7 @@ public class MyTableModel extends AbstractTableModel {
     public boolean isCellEditable(int row, int col) {
         //Note that the data/cell address is constant,
         //no matter where the cell appears onscreen.
-        if (col < 2) {
+        if (col == 1) {
             return false;
         } else {
             return true;
@@ -84,7 +84,7 @@ public class MyTableModel extends AbstractTableModel {
     public void selectAllOrNull(boolean value) {
         // Select All. The last column
         for (int index = 0; index < getRowCount(); index++) {
-            this.setValueAt(value, index, getColumnCount() - 1);
+            this.setValueAt(value, index, 0);
         }
     }
 }
