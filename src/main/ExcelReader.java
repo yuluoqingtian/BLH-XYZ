@@ -6,7 +6,6 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class ExcelReader {
@@ -93,7 +92,8 @@ public class ExcelReader {
         } else if (xssfCell.getCellType() == xssfCell.CELL_TYPE_NUMERIC) {
             //返回数值类型的值
             return String.valueOf(xssfCell.getNumericCellValue());
-        } else {
+        }
+        else {
             //返回字符串类型的值
             return String.valueOf(xssfCell.getStringCellValue());
         }

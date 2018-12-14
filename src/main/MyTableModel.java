@@ -40,6 +40,13 @@ public class MyTableModel extends AbstractTableModel {
         return data[rowIndex][columnIndex];
     }
 
+
+
+    public Object[] getRowValueByRowIndex(int index){
+        return data[index];
+    }
+
+
     public String getColumnName(int col) {
         return columnNames[col];
     }

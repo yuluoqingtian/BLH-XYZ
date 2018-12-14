@@ -4,7 +4,6 @@ import javabean.BL;
 import javabean.BLH;
 import javabean.XY;
 import javabean.XYZ;
-
 import java.text.DecimalFormat;
 
 public class Trans {

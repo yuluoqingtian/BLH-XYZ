@@ -31,5 +31,6 @@
     <orderEntry type="library" name="Maven: stax:stax-api:1.0.1" level="project" />
     <orderEntry type="library" name="Maven: com.jgoodies:forms:1.2.0" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse:swt:3.2.1-v3235e" level="project" />
+    <orderEntry type="library" name="forms_rt-7.0.3" level="project" />
   </component>
 </module>
