@@ -38,6 +38,7 @@ public class Main_win2 {
     private JMenuItem exportMenuItem;
     private JMenuItem exitMenuItem;
     private MyTableModel myTableModel = null;
+    private ArrayList<ExcelItem> chooseItemList = new ArrayList<ExcelItem>();
 
     /*
      * 创建一级菜单
@@ -67,19 +68,28 @@ public class Main_win2 {
                 FileNameText.setText(choosedFile.getAbsolutePath());
                 //System.out.println(path);
             }
-
         } catch (Exception error) {
             error.printStackTrace();
         }
     }
 
     private void Export() {
-        ArrayList<ExcelItem> choosedItemList = new ArrayList<ExcelItem>();
+        computedChoose();
+        for (ExcelItem fuck : chooseItemList) {
+            System.out.println(fuck.toFullString());
+        }
+    }
 
+    /**
+     * @return chooseCount:用户一共勾选了几项，为0说明用户没有勾选
+     * 此方法执行后,将用户选择的items赋值给ArrayList<ExcelItem> chooseItemList
+     */
+    private int computedChoose() {
+        int chooseCount = 0;
+        chooseItemList.clear();
         for (int i = 0; i < jTable.getRowCount(); i++) {
             if ((Boolean) jTable.getModel().getValueAt(i, 0)) {
                 ExcelItem item = new ExcelItem(
-                        (String) jTable.getModel().getValueAt(i, 1),
                         (String) jTable.getModel().getValueAt(i, 2),
                         (String) jTable.getModel().getValueAt(i, 3),
                         (String) jTable.getModel().getValueAt(i, 4),
@@ -87,18 +97,15 @@ public class Main_win2 {
                         (String) jTable.getModel().getValueAt(i, 6),
                         (String) jTable.getModel().getValueAt(i, 7)
                 );
-
-                choosedItemList.add(item);
-
+                chooseCount++;
+                chooseItemList.add(item);
             }
         }
-
-        for (ExcelItem fuck : choosedItemList) {
-            System.out.println(fuck.toFullString());
-        }
+        return chooseCount;
     }
 
-    public Main_win2() {
+
+    Main_win2() {
 
 
         $$$setupUI$$$();
@@ -151,6 +158,31 @@ public class Main_win2 {
                     MyTableModel myTableModel = (MyTableModel) jTable.getModel();
                     myTableModel.selectAllOrNull(Boolean.FALSE);
                     jTable.setModel(myTableModel);
+                }
+            }
+        });
+
+
+        //转换按钮的监听事件
+        changeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                /*
+                1、首先看看用户选择了什么，如果什么都没选，提示他勾选
+                2、如果他选了，看看他下拉框选了是什么东西
+                 */
+
+                int count = computedChoose();
+
+                //表格没数据
+                if (jTable.getModel().getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(scrollPane1, "表格数据为空", " 错误", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                //一行也没选
+                if (count == 0) {
+                    JOptionPane.showMessageDialog(scrollPane1, "请先选择若干行，才能进行转换", " 错误", JOptionPane.ERROR_MESSAGE);
+                    //return;
                 }
 
 
@@ -207,6 +239,10 @@ public class Main_win2 {
                     jTable.setModel(myTableModel);
                     scrollPane1.setViewportView(jTable);
 
+                    //焦点移到最后一行
+                    jTable.setRowSelectionInterval(jTable.getModel().getRowCount() - 1, jTable.getModel().getRowCount() - 1);
+                    scrollPane1.getViewport().setViewPosition(new Point(0, scrollPane1.getHeight()));
+
 
                 } else {
                     //若表格未创建，弹出错误提示框
@@ -220,7 +256,6 @@ public class Main_win2 {
 
     private void readAndShow() {
         try {
-
 //                    读取Excel文件，得到对象列表
             itemList = ExcelReader.read(choosedFile.getAbsolutePath());
             int tableLength = itemList.size();
@@ -230,7 +265,7 @@ public class Main_win2 {
 
             for (int i = 0; i < tableLength; i++) {
                 ExcelItem tableItem = itemList.get(i);
-                rowData[i] = new Object[]{Boolean.FALSE, tableItem.getKey(), tableItem.getX(), tableItem.getY(), tableItem.getZ()
+                rowData[i] = new Object[]{Boolean.FALSE, String.valueOf(i + 1), tableItem.getX(), tableItem.getY(), tableItem.getZ()
                         , tableItem.getB(), tableItem.getL(), tableItem.getH()};
             }
             myTableModel.setColumnNames(tableHeader);

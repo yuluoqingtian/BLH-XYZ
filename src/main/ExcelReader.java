@@ -39,9 +39,9 @@ public class ExcelReader {
                 //获取Excel文件中所有的列
                 int cells = row.getPhysicalNumberOfCells();
 
-                //key
-                XSSFCell key_cell = row.getCell(0);
-                String key_value = getValue(key_cell);
+//                //key
+//                XSSFCell key_cell = row.getCell(0);
+//                String key_value = getValue(key_cell);
 
                 //X
                 XSSFCell X_cell = row.getCell(1);
@@ -68,7 +68,7 @@ public class ExcelReader {
                 String H_value = getValue(H_cell);
 
 
-                ExcelItem item = new ExcelItem(key_value, X_value, Y_value, Z_value,
+                ExcelItem item = new ExcelItem( X_value, Y_value, Z_value,
                         B_value, L_value, H_value);
 
                 itemsList.add(item);

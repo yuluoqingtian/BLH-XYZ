@@ -1,7 +1,7 @@
 package javabean;
 
 public class ExcelItem {
-    private String key;
+    //private String key;
     private String X;
     private String Y;
     private String Z;
@@ -9,8 +9,8 @@ public class ExcelItem {
     private String L;
     private String H;
 
-    public ExcelItem(String key, String x, String y, String z, String b, String l, String h) {
-        this.key = key;
+    public ExcelItem( String x, String y, String z, String b, String l, String h) {
+        //this.key = key;
         X = x;
         Y = y;
         Z = z;
@@ -19,13 +19,13 @@ public class ExcelItem {
         H = h;
     }
 
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
+//    public String getKey() {
+//        return key;
+//    }
+//
+//    public void setKey(String key) {
+//        this.key = key;
+//    }
 
     public String getX() {
         return X;
@@ -77,7 +77,7 @@ public class ExcelItem {
 
     public String toFullString() {
         return "ExcelItem{" +
-                "key='" + key + '\'' +
+                //"key='" + key + '\'' +
                 ", X='" + X + '\'' +
                 ", Y='" + Y + '\'' +
                 ", Z='" + Z + '\'' +
@@ -90,6 +90,6 @@ public class ExcelItem {
 
     @Override
     public String toString() {
-       return key+" ?"+X+" ?"+Y+" ?"+Z+" ?"+B+" ?"+L+" ?"+H+" ";
+       return X+" ?"+Y+" ?"+Z+" ?"+B+" ?"+L+" ?"+H+" ";
     }
 }
