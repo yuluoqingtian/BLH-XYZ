@@ -77,8 +77,7 @@ public class ExcelItem {
 
     public String toFullString() {
         return "ExcelItem{" +
-                //"key='" + key + '\'' +
-                ", X='" + X + '\'' +
+                "X='" + X + '\'' +
                 ", Y='" + Y + '\'' +
                 ", Z='" + Z + '\'' +
                 ", B='" + B + '\'' +
