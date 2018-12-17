@@ -6,7 +6,6 @@ public class MyTableModel extends AbstractTableModel {
 
     private String[] columnNames;
     private Object[][] data;
-    private Boolean DEBUG;
 
     public String[] getColumnNames() {
         return columnNames;

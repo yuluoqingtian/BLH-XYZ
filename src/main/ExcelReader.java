@@ -23,7 +23,8 @@ public class ExcelReader {
         XSSFSheet sheet = workbook.getSheet("Sheet1");
 
         //获取Excel文件中的所有行数
-        int rows = sheet.getPhysicalNumberOfRows();
+        int rows = sheet.getLastRowNum()+1;
+        System.out.println(rows);
 
         //遍历行
         //List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
@@ -44,27 +45,27 @@ public class ExcelReader {
 //                String key_value = getValue(key_cell);
 
                 //X
-                XSSFCell X_cell = row.getCell(1);
+                XSSFCell X_cell = row.getCell(0);
                 String X_value = getValue(X_cell);
 
                 //Y
-                XSSFCell Y_cell = row.getCell(2);
+                XSSFCell Y_cell = row.getCell(1);
                 String Y_value = getValue(Y_cell);
 
                 //X
-                XSSFCell Z_cell = row.getCell(3);
+                XSSFCell Z_cell = row.getCell(2);
                 String Z_value = getValue(Z_cell);
 
                 //B
-                XSSFCell B_cell = row.getCell(4);
+                XSSFCell B_cell = row.getCell(3);
                 String B_value = getValue(B_cell);
 
                 //L
-                XSSFCell L_cell = row.getCell(5);
+                XSSFCell L_cell = row.getCell(4);
                 String L_value = getValue(L_cell);
 
                 //H
-                XSSFCell H_cell = row.getCell(6);
+                XSSFCell H_cell = row.getCell(5);
                 String H_value = getValue(H_cell);
 
 

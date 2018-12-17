@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="panel1" custom-create="true" layout-manager="GridLayoutManager" row-count="4" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="33" y="22" width="1504" height="909"/>
+      <xy x="33" y="22" width="1504" height="929"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -91,6 +91,8 @@
             <item value="BLH -&gt; XYZ"/>
             <item value="XY -&gt; BL"/>
             <item value="BL -&gt; XY"/>
+            <item value="四维"/>
+            <item value="七维"/>
           </model>
         </properties>
       </component>

@@ -2,6 +2,7 @@ package main;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.sun.org.apache.xpath.internal.SourceTree;
 import javabean.ExcelItem;
 import javabean.XYZ;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol;
@@ -14,6 +15,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -49,6 +52,7 @@ public class Main_win2 {
      */
     private JMenu fileMenu = new JMenu("文件");
     private JMenu aboutMenu = new JMenu("关于");
+    private double RA, RB, Lo, EPF;
 
 
     private void OpenFile() {
@@ -77,14 +81,63 @@ public class Main_win2 {
         }
     }
 
-    private void Export() {
-        int count = 0;
-        count = computedChoose();
-        System.out.println("\n通过Map.entrySet遍历key和value");
+    private void Export(String initPath) {
+        try {
 
-        //遍历LinkedHashMap,key就是行数
-        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-            System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue().toFullString());
+            if (jTable.getModel().getRowCount() == 0) {
+                JOptionPane.showMessageDialog(null, "表格没有数据不能导出", " 错误", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            //设置界面风格
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            //设置文件选择窗口开始打开的路径，目前设置为项目所在目录
+            JFileChooser chooser = new JFileChooser(new File(initPath));
+            //把按钮文字改成保存
+            chooser.setApproveButtonText("保存");
+
+
+            //后缀名过滤器
+            FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                    "Excel表格文件(*.xlsx)", "xlsx"
+            );
+            chooser.setFileFilter(filter);
+
+            //下面的方法将阻塞，直到用户按下保存按钮且文件名文本框不为空或者用户按下取消按钮
+            int option = chooser.showOpenDialog(null);
+            if (option == JFileChooser.APPROVE_OPTION) {//用户选择了保存
+                File file = chooser.getSelectedFile();
+                String fileName = chooser.getName(file); //从文件名输入框中获取文件名
+
+                //如果用户填写的文件名不带后缀，则自动添加
+                if (fileName.indexOf(".xls") == -1) {
+                    file = new File(chooser.getCurrentDirectory(), fileName + ".xlsx");
+                }
+
+
+                //如果文件存在，则弹出错误提示框，并且在原来用户想保存的地方再次打开保存窗口
+                if (file.exists()) {
+                    System.out.println("文件已存在");
+                    JOptionPane.showMessageDialog(null, "文件已存在，请重新命名", " 错误", JOptionPane.ERROR_MESSAGE);
+                    //Export(file.getParent());
+                    return;
+                }
+
+                //写文件
+                ExcelWriter.write(file.getAbsoluteFile().toString(), myTableModel);
+
+                //写完之后检查一下成功没有
+                if (file.exists()) {
+                    JOptionPane.showMessageDialog(null, "保存成功", " 成功", JOptionPane.PLAIN_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(null, "保存失败", " 错误", JOptionPane.WARNING_MESSAGE);
+                }
+
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -139,7 +192,7 @@ public class Main_win2 {
         exportMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Export();
+                Export("./");
             }
         });
         // 设置 "退出" 子菜单被点击的监听器
@@ -170,6 +223,30 @@ public class Main_win2 {
             }
         });
 
+        //第一个下拉框改变时的监听事件
+        comboBox1.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    //System.out.println(comboBox1.getSelectedItem());
+                    if (comboBox1.getSelectedItem().equals("BLH -> XYZ") || comboBox1.getSelectedItem().equals("XYZ -> BLH")) {
+                        //重新设置表头
+                        myTableModel.setColumnNames(new String[]{"选择", "KEY", "X", "Y", "Z", "B", "L", "H"});
+                        //通知表头重新渲染
+                        myTableModel.fireTableStructureChanged();
+                    } else if (comboBox1.getSelectedItem().equals("BL -> XY") || comboBox1.getSelectedItem().equals("XY -> BL")) {
+                        myTableModel.setColumnNames(new String[]{"选择", "KEY", "X", "Y", "", "B", "L", ""});
+                        myTableModel.fireTableStructureChanged();
+                    } else if (comboBox1.getSelectedItem().equals("四维")) {
+                        myTableModel.setColumnNames(new String[]{"选择", "KEY", "X", "Y", "", "X1", "Y1", ""});
+                        myTableModel.fireTableStructureChanged();
+                    } else if (comboBox1.getSelectedItem().equals("七维")) {
+                        myTableModel.setColumnNames(new String[]{"选择", "KEY", "X", "Y", "Z", "X1", "Y1", "Z1"});
+                        myTableModel.fireTableStructureChanged();
+                    }
+                }
+            }
+        });
 
         //转换按钮的监听事件
         changeButton.addActionListener(new ActionListener() {
@@ -194,155 +271,96 @@ public class Main_win2 {
                     return;
                 }
 
-                //如果用户选了几行，看看他下拉框里面选的是什么
-                //如果选的是1954年北京坐标系
-                if (comboBox2.getSelectedItem().equals("1954年北京坐标系")) {
-                    if (comboBox1.getSelectedItem().toString().equals("XYZ -> BLH")) {
-                        //将符合条件的坐标进行转换
 
-                        //成功转换的数量
-                        int succcess = 0;
-                        //System.out.println("\n通过Map.entrySet遍历key和value");
-                        //遍历LinkedHashMap,key就是行数
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            //System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue().toFullString());
-                            if (entry.getValue().getX() != null && !(entry.getValue().getX().equals(""))
-                                    && entry.getValue().getY() != null && !(entry.getValue().getY().equals(""))
-                                    && entry.getValue().getZ() != null && !(entry.getValue().getZ().equals(""))) {
-                                String[] convetData = XYZtoBLH(entry.getValue().getX(), entry.getValue().getY(), entry.getValue().getZ(), "1954年北京坐标系");
+                switch (comboBox2.getSelectedIndex()) {
+                    case 0:
+                        RA = 6378245;
+                        RB = RA - RA / 298.3;
+                        EPF = 1 - Math.pow(RB, 2) / Math.pow(RA, 2);
+                        break;
+                    case 1:
+                        RA = 6378137;
+                        RB = RA - RA / 298.257223;
+                        EPF = 1 - Math.pow(RB, 2) / Math.pow(RA, 2);
+                        break;
+                    default:
 
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 5);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 6);
-                                myTableModel.setValueAt(convetData[2], entry.getKey() - 1, 7);
-                                succcess++;
-                            }
-                        }
-                        //System.out.println("共选择" + count + "项，" + "成功转换" + succcess + "项");
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "XYZ -> BLH", JOptionPane.INFORMATION_MESSAGE);
-
-                    } else if (comboBox1.getSelectedItem().toString().equals("BLH -> XYZ")) {
-                        int succcess = 0;
-                        //System.out.println("\n通过Map.entrySet遍历key和value");
-                        //遍历LinkedHashMap,key就是行数
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            //System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue().toFullString());
-                            if (entry.getValue().getB() != null && !(entry.getValue().getB().equals(""))
-                                    && entry.getValue().getL() != null && !(entry.getValue().getL().equals(""))
-                                    && entry.getValue().getH() != null && !(entry.getValue().getH().equals(""))) {
-                                String[] convetData = BLHtoXYZ(entry.getValue().getB(), entry.getValue().getL(), entry.getValue().getH(), "1954年北京坐标系");
-
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 2);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 3);
-                                myTableModel.setValueAt(convetData[2], entry.getKey() - 1, 4);
-                                succcess++;
-                            }
-                        }
-                        //System.out.println("共选择" + count + "项，" + "成功转换" + succcess + "项");
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "BLH -> XYZ", JOptionPane.INFORMATION_MESSAGE);
-
-                    } else if (comboBox1.getSelectedItem().toString().equals("XY -> BL")) {
-                        int succcess = 0;
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            if (entry.getValue().getX() != null && !(entry.getValue().getX().equals(""))
-                                    && entry.getValue().getY() != null && !(entry.getValue().getY().equals(""))) {
-
-                                String[] convetData = XYtoBL(entry.getValue().getX(), entry.getValue().getY(), "1954年北京坐标系");
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 5);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 6);
-                                succcess++;
-                            }
-                        }
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "XY -> BL", JOptionPane.INFORMATION_MESSAGE);
-                    } else if (comboBox1.getSelectedItem().toString().equals("BL -> XY")) {
-                        int succcess = 0;
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            if (entry.getValue().getB() != null && !(entry.getValue().getB().equals(""))
-                                    && entry.getValue().getL() != null && !(entry.getValue().getL().equals(""))) {
-
-                                String[] convetData = BLtoXY(entry.getValue().getB(), entry.getValue().getL(), "1954年北京坐标系");
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 2);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 3);
-                                succcess++;
-                            }
-                        }
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "BL -> XY", JOptionPane.INFORMATION_MESSAGE);
-                    }
-
-
-                } else {//另一个坐标系
-                    if (comboBox1.getSelectedItem().toString().equals("XYZ -> BLH")) {
-                        //将符合条件的坐标进行转换
-
-                        //成功转换的数量
-                        int succcess = 0;
-                        //System.out.println("\n通过Map.entrySet遍历key和value");
-                        //遍历LinkedHashMap,key就是行数
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            //System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue().toFullString());
-                            if (entry.getValue().getX() != null && !(entry.getValue().getX().equals(""))
-                                    && entry.getValue().getY() != null && !(entry.getValue().getY().equals(""))
-                                    && entry.getValue().getZ() != null && !(entry.getValue().getZ().equals(""))) {
-                                String[] convetData = XYZtoBLH(entry.getValue().getX(), entry.getValue().getY(), entry.getValue().getZ(), "WGS84世界坐标系");
-
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 5);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 6);
-                                myTableModel.setValueAt(convetData[2], entry.getKey() - 1, 7);
-                                succcess++;
-                            }
-                        }
-                        //System.out.println("共选择" + count + "项，" + "成功转换" + succcess + "项");
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "XYZ -> BLH", JOptionPane.INFORMATION_MESSAGE);
-
-                    } else if (comboBox1.getSelectedItem().toString().equals("BLH -> XYZ")) {
-                        int succcess = 0;
-                        //System.out.println("\n通过Map.entrySet遍历key和value");
-                        //遍历LinkedHashMap,key就是行数
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            //System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue().toFullString());
-                            if (entry.getValue().getB() != null && !(entry.getValue().getB().equals(""))
-                                    && entry.getValue().getL() != null && !(entry.getValue().getL().equals(""))
-                                    && entry.getValue().getH() != null && !(entry.getValue().getH().equals(""))) {
-                                String[] convetData = BLHtoXYZ(entry.getValue().getB(), entry.getValue().getL(), entry.getValue().getH(), "WGS84世界坐标系");
-
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 2);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 3);
-                                myTableModel.setValueAt(convetData[2], entry.getKey() - 1, 4);
-                                succcess++;
-                            }
-                        }
-                        //System.out.println("共选择" + count + "项，" + "成功转换" + succcess + "项");
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "BLH -> XYZ", JOptionPane.INFORMATION_MESSAGE);
-
-                    } else if (comboBox1.getSelectedItem().toString().equals("XY -> BL")) {
-                        int succcess = 0;
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            if (entry.getValue().getX() != null && !(entry.getValue().getX().equals(""))
-                                    && entry.getValue().getY() != null && !(entry.getValue().getY().equals(""))) {
-
-                                String[] convetData = XYtoBL(entry.getValue().getX(), entry.getValue().getY(), "WGS84世界坐标系");
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 5);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 6);
-                                succcess++;
-                            }
-                        }
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "XY -> BL", JOptionPane.INFORMATION_MESSAGE);
-                    } else if (comboBox1.getSelectedItem().toString().equals("BL -> XY")) {
-                        int succcess = 0;
-                        for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
-                            if (entry.getValue().getB() != null && !(entry.getValue().getB().equals(""))
-                                    && entry.getValue().getL() != null && !(entry.getValue().getL().equals(""))) {
-
-                                String[] convetData = BLtoXY(entry.getValue().getB(), entry.getValue().getL(), "WGS84世界坐标系");
-                                myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 2);
-                                myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 3);
-                                succcess++;
-                            }
-                        }
-                        JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "BL -> XY", JOptionPane.INFORMATION_MESSAGE);
-                    }
-
-
+                        break;
                 }
+
+
+                //如果用户选了几行，看看他下拉框里面选的是什么
+                if (comboBox1.getSelectedItem().toString().equals("XYZ -> BLH")) {
+                    //将符合条件的坐标进行转换
+
+                    //成功转换的数量
+                    int succcess = 0;
+                    //System.out.println("\n通过Map.entrySet遍历key和value");
+                    //遍历LinkedHashMap,key就是行数
+                    for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
+                        //System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue().toFullString());
+                        if (entry.getValue().getX() != null && !(entry.getValue().getX().equals(""))
+                                && entry.getValue().getY() != null && !(entry.getValue().getY().equals(""))
+                                && entry.getValue().getZ() != null && !(entry.getValue().getZ().equals(""))) {
+                            String[] convetData = XYZtoBLH(entry.getValue().getX(), entry.getValue().getY(), entry.getValue().getZ());
+
+                            myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 5);
+                            myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 6);
+                            myTableModel.setValueAt(convetData[2], entry.getKey() - 1, 7);
+                            succcess++;
+                        }
+                    }
+                    //System.out.println("共选择" + count + "项，" + "成功转换" + succcess + "项");
+                    JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "XYZ -> BLH", JOptionPane.INFORMATION_MESSAGE);
+
+                } else if (comboBox1.getSelectedItem().toString().equals("BLH -> XYZ")) {
+                    int succcess = 0;
+                    //System.out.println("\n通过Map.entrySet遍历key和value");
+                    //遍历LinkedHashMap,key就是行数
+                    for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
+                        //System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue().toFullString());
+                        if (entry.getValue().getB() != null && !(entry.getValue().getB().equals(""))
+                                && entry.getValue().getL() != null && !(entry.getValue().getL().equals(""))
+                                && entry.getValue().getH() != null && !(entry.getValue().getH().equals(""))) {
+                            String[] convetData = BLHtoXYZ(entry.getValue().getB(), entry.getValue().getL(), entry.getValue().getH());
+
+                            myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 2);
+                            myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 3);
+                            myTableModel.setValueAt(convetData[2], entry.getKey() - 1, 4);
+                            succcess++;
+                        }
+                    }
+                    //System.out.println("共选择" + count + "项，" + "成功转换" + succcess + "项");
+                    JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "BLH -> XYZ", JOptionPane.INFORMATION_MESSAGE);
+
+                } else if (comboBox1.getSelectedItem().toString().equals("XY -> BL")) {
+                    int succcess = 0;
+                    for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
+                        if (entry.getValue().getX() != null && !(entry.getValue().getX().equals(""))
+                                && entry.getValue().getY() != null && !(entry.getValue().getY().equals(""))) {
+
+                            String[] convetData = XYtoBL(entry.getValue().getX(), entry.getValue().getY());
+                            myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 5);
+                            myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 6);
+                            succcess++;
+                        }
+                    }
+                    JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "XY -> BL", JOptionPane.INFORMATION_MESSAGE);
+                } else if (comboBox1.getSelectedItem().toString().equals("BL -> XY")) {
+                    int succcess = 0;
+                    for (HashMap.Entry<Integer, ExcelItem> entry : chooseItemMap.entrySet()) {
+                        if (entry.getValue().getB() != null && !(entry.getValue().getB().equals(""))
+                                && entry.getValue().getL() != null && !(entry.getValue().getL().equals(""))) {
+
+                            String[] convetData = BLtoXY(entry.getValue().getB(), entry.getValue().getL());
+                            myTableModel.setValueAt(convetData[0], entry.getKey() - 1, 2);
+                            myTableModel.setValueAt(convetData[1], entry.getKey() - 1, 3);
+                            succcess++;
+                        }
+                    }
+                    JOptionPane.showMessageDialog(null, "共选择 " + count + " 项，" + "成功转换符合条件数据 " + succcess + " 项", "BL -> XY", JOptionPane.INFORMATION_MESSAGE);
+                }
+
             }
         });
 
@@ -448,7 +466,7 @@ public class Main_win2 {
      * @param coordinate 坐标系类型，值为"1954年北京坐标系"或者"WGS84世界坐标系"
      * @return 返回BLH的值，String[0],String[1],String[2],下面的方法类似
      */
-    private String[] XYZtoBLH(String X, String Y, String Z, String coordinate) {
+    private String[] XYZtoBLH(String X, String Y, String Z) {
         //todo String[0]=B,String[1]=L,String=H ,注意针对不同坐标系
         String[] result = new String[3];
         result[0] = X;
@@ -457,7 +475,7 @@ public class Main_win2 {
         return result;
     }
 
-    private String[] BLHtoXYZ(String B, String L, String H, String coordinate) {
+    private String[] BLHtoXYZ(String B, String L, String H) {
         String[] result = new String[3];
         result[0] = B;
         result[1] = L;
@@ -465,14 +483,14 @@ public class Main_win2 {
         return result;
     }
 
-    private String[] BLtoXY(String B, String L, String coordinate) {
+    private String[] BLtoXY(String B, String L) {
         String[] result = new String[2];
         result[0] = B;
         result[1] = L;
         return result;
     }
 
-    private String[] XYtoBL(String X, String Y, String coordinate) {
+    private String[] XYtoBL(String X, String Y) {
         String[] result = new String[2];
         result[0] = X;
         result[1] = Y;
@@ -570,6 +588,8 @@ public class Main_win2 {
         defaultComboBoxModel2.addElement("BLH -> XYZ");
         defaultComboBoxModel2.addElement("XY -> BL");
         defaultComboBoxModel2.addElement("BL -> XY");
+        defaultComboBoxModel2.addElement("四维");
+        defaultComboBoxModel2.addElement("七维");
         comboBox1.setModel(defaultComboBoxModel2);
         panel1.add(comboBox1, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
